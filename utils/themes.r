@@ -13,13 +13,23 @@ model_labels <- c(
   "ica" = "ICA", 
   "nmf" = "NMF", 
   "vanillavae" = "VAE",
-  "betavae" = "BVAE", 
-  "betatcvae" = "BTCVAE"
+  "betavae" = "βVAE",
+  "betatcvae" = "βTCVAE"
 )
+
 
 # Custom theme function
 custom_theme <- function() {
   theme(
-    legend.position = "right"
+    legend.position = "right",
+    
+    # --- Font sizes ---
+    text = element_text(size = 30),
+    axis.title = element_text(size = 34),
+    axis.text = element_text(size = 28),
+    axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+    legend.title = element_text(size = 30),
+    legend.text = element_text(size = 28),
+    plot.title = element_text(size = 40)
   )
 }
