@@ -91,8 +91,8 @@ latent_plot <- ggplot(max_corr_df, aes(x = factor(full_model_z), y = max_corr, c
   geom_smooth(aes(group = model), method = "loess", se = TRUE, size = 1, alpha = 0.1) +  # Trend line with shading 
   scale_color_manual(name = "Algorithm", values = model_colors, labels = model_labels) +
   scale_fill_manual(name = "Algorithm", values = model_colors, labels = model_labels) +
-  labs(x = "Latent Dimensions", y = "Highest Correlation", title = "Highest Correlation Across All Pathways by Latent Dimension for Each Model") +
-  custom_theme()
+  labs(x = "Latent Dimension", y = "Highest Pearson Correlation\nfor Dimension", title = "All Drugs") +
+  custom_theme() 
 
 
 # In[9]:
@@ -111,8 +111,8 @@ hepato_plot <- ggplot(hepato_corr_df, aes(x = factor(full_model_z), y = max_corr
   geom_smooth(aes(group = model), method = "loess", se = TRUE, size = 1, alpha = 0.1) +  # Trend line with shading 
   scale_color_manual(name = "Algorithm", values = model_colors, labels = model_labels) +
   scale_fill_manual(name = "Algorithm", values = model_colors, labels = model_labels) +
-  labs(x = "Latent Dimensions", y = "Highest Correlation", title = "Highest Correlation for Triprolidine by Latent Dimension for Each Model") +
-  theme(legend.position = "right")
+  labs(x = "Latent Dimension", y = "Highest Pearson Correlation\nfor Dimension", title = "Amonafide") +
+  custom_theme
 
 
 # In[11]:
@@ -131,8 +131,8 @@ phgg_plot <- ggplot(phgg_corr_df, aes(x = factor(full_model_z), y = max_corr, co
   geom_smooth(aes(group = model), method = "loess", se = TRUE, size = 1, alpha = 0.1) +  # Trend line with shading 
   scale_color_manual(name = "Algorithm", values = model_colors, labels = model_labels) +
   scale_fill_manual(name = "Algorithm", values = model_colors, labels = model_labels) +
-  labs(x = "Latent Dimensions", y = "Highest Correlation", title = "Highest Correlation for Ro-4987655 by Latent Dimension for Each Model") +
-  theme(legend.position = "right")
+  labs(x = "Latent Dimension", y = "Highest Pearson Correlation\nfor Dimension", title = "Idasanutlin") +
+  custom_theme
 
 
 # In[13]:
@@ -146,13 +146,30 @@ ggsave("./visualize/phgg_latent_plot.png", plot = phgg_plot, width = 10, height 
 
 
 #Normal volcano plot 
-volcano_plot <- ggplot(drug_results_df, aes(x = pearson_correlation, y = -log(adjusted_p_value), color = model, fill = model)) +
-  geom_point(size = 3, shape = 21) +  # Points representing drugs
-  scale_color_manual(name = "Model", values = model_colors, labels = model_labels) +  # Color scale
-  scale_fill_manual(name = "Model", values = model_colors, labels = model_labels) +  # Fill scale
-  ylim(0, 125) +
-  labs(x = "Correlation", y = "-log10(p-value)", title = "Drug Correlation by Model") 
-  theme(legend.position = "right")  # Position the legend
+combined_df <- combined_df %>%
+  mutate(
+    passes_qc = abs(pearson_correlation) > 0.25 & -log10(adjusted_p_value) > 2.5
+  )
+
+volcano_plot <- ggplot(combined_df, aes(
+  x = pearson_correlation,
+  y = -log10(adjusted_p_value),
+  color = passes_qc,
+  fill = passes_qc
+)) +
+  geom_point(alpha = 0.9, size = 3, shape = 21) +
+  geom_vline(xintercept = c(-0.25, 0.25), linetype = "dashed", color = "black", size = 1) +
+  geom_hline(yintercept = 1.3, linetype = "dashed", color = "black", size = 1) +
+  scale_color_manual(values = c(`TRUE` = "#b80668", `FALSE` = "grey70")) +
+  scale_fill_manual(values = c(`TRUE` = "#b80668", `FALSE` = "grey70")) +
+  ylim(0, 30) +
+  labs(
+    x = "Correlation",
+    y = "-log10(p-value)",
+    title = "Correlation Results\n(PRISM with Real Data)"
+  ) +
+  theme(legend.position = "none") +
+  custom_theme
 
 
 # In[15]:
@@ -166,14 +183,32 @@ ggsave("./visualize/drug_volcano_plot.png", plot = volcano_plot, width = 10, hei
 
 
 #Control volcano plot
-control_plot <- ggplot(control_df, aes(x = pearson_correlation, y = -log(adjusted_p_value), color = model, fill = model)) +
-  geom_point(size = 3, shape = 21) +  # Points representing drugs
-  scale_color_manual(name = "Model", values = model_colors, labels = model_labels) +  # Color scale
-  scale_fill_manual(name = "Model", values = model_colors, labels = model_labels) +  # Fill scale
-  ylim(0, 125) +
-  xlim(-0.5, 0.5) +
-  labs(x = "Correlation", y = "-log10(p-value)", title = "Drug Correlation by Model: Control") +
-  theme(legend.position = "right")  # Position the legend
+control_df <- control_df %>%
+  mutate(
+    passes_qc = abs(pearson_correlation) > 0.25 & -log10(adjusted_p_value) > 2.5
+  )
+
+# Control volcano plot
+control_plot <- ggplot(control_df, aes(
+  x = pearson_correlation,
+  y = -log10(adjusted_p_value),
+  color = passes_qc,
+  fill = passes_qc
+)) +
+  geom_point(alpha = 0.9, size = 3, shape = 21) +
+  geom_vline(xintercept = c(-0.25, 0.25), linetype = "dashed", color = "black", size = 1) +
+  geom_hline(yintercept = 1.3, linetype = "dashed", color = "black", size = 1) +
+  scale_color_manual(values = c(`TRUE` = "#b80668", `FALSE` = "grey70")) +
+  scale_fill_manual(values = c(`TRUE` = "#b80668", `FALSE` = "grey70")) +
+  ylim(0, 30) +
+  xlim(-0.6, 0.6) +
+  labs(
+    x = "Correlation",
+    y = "-log10(p-value)",
+    title = "Correlation Results\n(PRISM with Shuffled Data)"
+  ) +
+  theme(legend.position = "none") +
+  custom_theme
 
 
 # In[17]:
