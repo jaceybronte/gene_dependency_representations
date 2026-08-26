@@ -1,9 +1,3 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# In[1]:
-
-
 suppressPackageStartupMessages({
   library(dplyr)
   library(readr)
@@ -21,10 +15,6 @@ suppressPackageStartupMessages({
 
 select <- dplyr::select
 filter <- dplyr::filter
-
-
-# In[2]:
-
 
 cell_killing_file <- file.path("./data/cell-killing.csv")
 raw <- read_csv(cell_killing_file, col_names = FALSE, show_col_types = FALSE)
@@ -75,20 +65,12 @@ message("Parsed ", nrow(cell_killing_long), " concentration/SF rows across ",
         n_distinct(cell_killing_long$drug), " raw drug labels.")
 print(cell_killing_long %>% count(sample, drug))
 
-
-# In[3]:
-
-
 final_drug_file <- file.path("./results/final_drug_w_paths.csv")
 final_drug_w_paths <- read_csv(final_drug_file)
 final_drug_w_paths <- final_drug_w_paths %>%
   mutate(ModelID = if_else(ModelID == "GSM7305243", "MAF-868", ModelID))
 
-
-# In[4]:
-
-
-auc_df <- cell_killing_long %>%
+cell_killing_df <- cell_killing_long %>%
   arrange(sample, drug, concentration_nM) %>%
   group_by(sample, drug) %>%
   mutate(
@@ -99,15 +81,6 @@ auc_df <- cell_killing_long %>%
     auc = MESS::auc(x = x_scaled, y = surviving_fraction),
     .groups = "drop"
   )
-
-
-# In[5]:
-
-
-cell_killing_df <- auc_df
-
-
-# In[6]:
 
 
 clean_sample <- function(x) {
@@ -141,20 +114,11 @@ final_drug_w_paths <- final_drug_w_paths %>%
     name    = clean_drug(name)
   )
 
-
-# In[9]:
-
-
 message("\nDistinct (ModelID, name) in cell_killing_df not found in final_drug_w_paths:")
 unmatched <- anti_join(cell_killing_df, final_drug_w_paths, by = c("ModelID", "name")) %>%
   filter(name %in% c("3-deazaneplanocin-a", "cladribine", "axitinib")) %>%
   select(ModelID, name)
 print(unmatched)
-
-
-
-# In[10]:
-
 
 plot_df <- cell_killing_df %>%
   left_join(final_drug_w_paths, by = c("ModelID", "name")) %>%
@@ -171,20 +135,12 @@ plot_df <- cell_killing_df %>%
 message("\nFinal plot_df row counts per drug (non-NA latent_score):")
 print(plot_df %>% filter(!is.na(latent_score)) %>% count(drug))
 
-
-# In[11]:
-
-
 plot_df$ModelID <- factor(plot_df$ModelID)
 samples <- levels(plot_df$ModelID)
 sample_colors <- setNames(
   qualitative_hcl(length(samples), palette = "Pastel 1"),
   samples
 )
-
-
-# In[12]:
-
 
 make_panel <- function(data, y_var, y_label, is_log = FALSE) {
   d <- data %>% filter(!is.na(latent_score), !is.na(.data[[y_var]]))
@@ -258,9 +214,6 @@ make_panel <- function(data, y_var, y_label, is_log = FALSE) {
 }
 
 
-# In[13]:
-
-
 drugs_display <- c("3-Deazaneplanocin-A", "Cladribine", "Axitinib")
  
 auc_panels <- map(drugs_display, \(d) {
@@ -270,9 +223,6 @@ auc_panels <- map(drugs_display, \(d) {
     theme(plot.title = element_text(face = "bold", size = 20, color = "#1A1A2E"))
 })
  
-
-
-# In[15]:
 
 
 auc_row <- wrap_plots(auc_panels, ncol = 3)
@@ -292,4 +242,3 @@ ggsave("./visualize/drug_latent_vs_killing.png", final_plot,
        width = 15, height = 7, dpi = 180, bg = "#F8F9FA")
  
 message("Saved: drug_latent_vs_killing.png")
-
